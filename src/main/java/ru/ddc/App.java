@@ -5,6 +5,7 @@ import ru.ddc.csvparser.CSVParser;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class App {
     public static void main(String[] args) {
@@ -30,6 +31,10 @@ public class App {
         System.out.print("case2_1 = ");
         List<List<Float>> x = predict_1(middleList, highList, lowList, wmf, 254);
         x.forEach(System.out::println);
+
+        System.out.println("case3 = ");
+        List<List<List<Float>>> y = predict_dataset(middleList, highList, lowList, wmf, 4420, 4560);
+        y.forEach(lists -> lists.forEach(System.out::println));
 
     }
 
@@ -127,10 +132,13 @@ public class App {
         return result_list;
     }
 
-//    private static List<Float> predict_dataset(List<Float> price, List<Float> priceHigh, List<Float> priceLow, List<List<Float>> wmf, int point_price, int poin_end) {
-//        for (int i = point_price; i < poin_end; i+=4) {
-//
-//        }
-//    }
+    private static List<List<List<Float>>> predict_dataset(List<Float> price, List<Float> priceHigh, List<Float> priceLow, List<List<Float>> wmf, int point_price, int poin_end) {
+        List<List<List<Float>>> result_list = new ArrayList<>();
+        for (int i = point_price; i < poin_end; i += 4) {
+            List<List<Float>> result = predict_1(price, priceHigh, priceLow, wmf, i);
+            result_list.add(result);
+        }
+        return result_list;
+    }
 
 }
