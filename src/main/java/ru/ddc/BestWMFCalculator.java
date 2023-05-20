@@ -1,4 +1,4 @@
-package ru.ddc.csvparser;
+package ru.ddc;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,10 +20,10 @@ public class BestWMFCalculator extends Thread {
 
     @Override
     public void run() {
-        best_wmf = best_wmf();
+        best_wmf = best_wmf_1();
     }
 
-    private List<Float> best_wmf() {
+    private List<Float> best_wmf_1() {
         float cmo_min = 10;
         float point_wmf = 0;
         float min_price = 0;
@@ -31,7 +31,7 @@ public class BestWMFCalculator extends Thread {
         int sort_wmf = 0;
 
         for (int item = 1; item < 321; item++) {
-            List<Float> result = identification(price, wmf.get(item), point_price, m);
+            List<Float> result = identification_1(price, wmf.get(item), point_price, m);
             if (result.get(1) < cmo_min) {
                 cmo_min = result.get(1);
                 point_wmf = result.get(2);
@@ -51,7 +51,7 @@ public class BestWMFCalculator extends Thread {
         return result_list;
     }
 
-    private List<Float> identification(List<Float> price, List<Float> wmf, int point_price, int m) {
+    private List<Float> identification_1(List<Float> price, List<Float> wmf, int point_price, int m) {
         int start_price = point_price - m;
         List<Float> price_part = price.subList(start_price, point_price);
         float max_price = Collections.max(price_part);
@@ -63,7 +63,7 @@ public class BestWMFCalculator extends Thread {
         for (int i = 0; i <= wmf.size() - m; i++) {
             List<Float> row = wmf.subList(i, i + m);
             List<Float> wmf_norm = normalize(row);
-            float cmo_value = cmo(price_norm, wmf_norm, m);
+            float cmo_value = cmo_1(price_norm, wmf_norm, m);
             if (cmo_value < cmo_min) {
                 cmo_min = cmo_value;
                 index_cmo_min = index;
@@ -80,7 +80,7 @@ public class BestWMFCalculator extends Thread {
         return result_list;
     }
 
-    private float cmo(List<Float> price, List<Float> wmf, int length) {
+    private float cmo_1(List<Float> price, List<Float> wmf, int length) {
         float cmo_mean = 0;
         for (int i = 0; i < length; i++) {
             cmo_mean += Math.abs(price.get(i) - wmf.get(i));
