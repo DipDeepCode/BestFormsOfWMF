@@ -42,7 +42,7 @@ public class App {
             );
         }
 
-        List<List<Float>> wmf_np = CSVParser.parseAllColumns("src/main/resources/wmf_full.csv");
+        Map<String, List<Float>> wmf_np = CSVParser.parseAllColumns("src/main/resources/wmf_full.csv");
 
 //        System.out.print("predict_param = ");
         List<List<Float>> predict_param = predict_1(midi_vibr, maxi_vibr, mini_vibr, wmf_np, 130);
@@ -63,7 +63,7 @@ public class App {
         });
     }
 
-    private static List<List<Float>> predict_1(List<Float> price, List<Float> priceHigh, List<Float> priceLow, List<List<Float>> wmf, int point_price) {
+    private static List<List<Float>> predict_1(List<Float> price, List<Float> priceHigh, List<Float> priceLow, Map<String, List<Float>> wmf, int point_price) {
         List<List<Float>> result_list = new ArrayList<>();
         for (int m = 20; m < 105; m += 5) {
 

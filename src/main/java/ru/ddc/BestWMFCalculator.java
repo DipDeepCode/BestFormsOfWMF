@@ -3,15 +3,16 @@ package ru.ddc;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class BestWMFCalculator extends Thread {
     private List<Float> best_wmf;
     private List<Float> price;
-    private List<List<Float>> wmf;
+    private Map<String, List<Float>> wmf;
     private int point_price;
     private int m;
 
-    public BestWMFCalculator(List<Float> price, List<List<Float>> wmf, int point_price, int m) {
+    public BestWMFCalculator(List<Float> price, Map<String, List<Float>> wmf, int point_price, int m) {
         this.price = price;
         this.wmf = wmf;
         this.point_price = point_price;
@@ -30,6 +31,18 @@ public class BestWMFCalculator extends Thread {
         float max_price = 0;
         int sort_wmf = 0;
 
+        for (String key : wmf.keySet()) {
+            List<Float> result = identification_1(price, wmf.get(key), point_price, m);
+            if (result.get(1) < cmo_min) {
+                cmo_min = result.get(1);
+                point_wmf = result.get(2);
+                min_price = result.get(3);
+                max_price = result.get(4);
+                sort_wmf = key;
+            }
+        }
+        
+/*
         for (int item = 1; item < 321; item++) {
             List<Float> result = identification_1(price, wmf.get(item), point_price, m);
             if (result.get(1) < cmo_min) {
@@ -40,6 +53,7 @@ public class BestWMFCalculator extends Thread {
                 sort_wmf = item;
             }
         }
+*/
 
         List<Float> result_list = new ArrayList<>();
         result_list.add((float) m);
@@ -110,11 +124,11 @@ public class BestWMFCalculator extends Thread {
         this.price = price;
     }
 
-    public List<List<Float>> getWmf() {
+    public Map<String, List<Float>> getWmf() {
         return wmf;
     }
 
-    public void setWmf(List<List<Float>> wmf) {
+    public void setWmf(Map<String, List<Float>> wmf) {
         this.wmf = wmf;
     }
 

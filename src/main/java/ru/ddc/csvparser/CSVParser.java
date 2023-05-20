@@ -32,7 +32,6 @@ public class CSVParser {
 
             for (String columnName : columnNames) {
                 floats.put(columnName, new ArrayList<>());
-//                floats.add(new ArrayList<>());
             }
 
             int[] indexes = new int[columnNames.length];
@@ -46,13 +45,13 @@ public class CSVParser {
             while (iterator.hasNext()) {
                 String[] values = iterator.next();
                 for (int i = 0; i < columnNames.length; i++) {
-                    float e;
+                    float value;
                     try {
-                        e = Float.parseFloat(values[indexes[i]]);
+                        value = Float.parseFloat(values[indexes[i]]);
                     } catch (NumberFormatException ex) {
-                        e = Float.NaN;
+                        value = Float.NaN;
                     }
-                    floats.get(columnNames[i]).add(e);
+                    floats.get(columnNames[i]).add(value);
                 }
             }
         } catch (IOException | CsvValidationException e) {
@@ -61,8 +60,8 @@ public class CSVParser {
         return floats;
     }
 
-    public static List<List<Float>> parseAllColumns(String filename) {
-        List<List<Float>> floats = new ArrayList<>();
+    public static Map<String, List<Float>> parseAllColumns(String filename) {
+        Map<String, List<Float>> floats = new HashMap<>();
         try (FileReader reader = new FileReader(filename);
              CSVReader csvReader = new CSVReaderBuilder(reader)
                      .withCSVParser(new CSVParserBuilder().withSeparator('\t').build())
@@ -77,8 +76,8 @@ public class CSVParser {
 
             String[] columnNames = header;
 
-            for (int i = 0; i < columnNames.length; i++) {
-                floats.add(new ArrayList<>());
+            for (String columnName : columnNames) {
+                floats.put(columnName, new ArrayList<>());
             }
 
             int[] indexes = new int[columnNames.length];
@@ -92,7 +91,13 @@ public class CSVParser {
             while (iterator.hasNext()) {
                 String[] values = iterator.next();
                 for (int i = 0; i < columnNames.length; i++) {
-                    floats.get(i).add(Float.parseFloat(values[indexes[i]]));
+                    float value;
+                    try {
+                        value = Float.parseFloat(values[indexes[i]]);
+                    } catch (NumberFormatException ex) {
+                        value = Float.NaN;
+                    }
+                    floats.get(columnNames[i]).add(value);
                 }
             }
         } catch (IOException | CsvValidationException e) {
