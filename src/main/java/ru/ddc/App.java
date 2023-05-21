@@ -1,43 +1,60 @@
 package ru.ddc;
 
-import ru.ddc.csvparser.BestWMFCalculator;
-import ru.ddc.csvparser.CSVParser;
+import ru.ddc.utils.CSVParser;
 
 import java.util.*;
 
 public class App {
 
     public static void main(String[] args) {
-        List<List<Float>> EurUsd =
-                CSVParser.parseSpecificColumns("src/main/resources/EURUSD_15min_2022.csv",
-                        "high", "low", "middle");
-        List<Float> highList = EurUsd.get(0);
-        List<Float> lowList = EurUsd.get(1);
-        List<Float> middleList = EurUsd.get(2);
-//        System.out.println(normalize(highList));
-        List<List<Float>> wmf = CSVParser.parseAllColumns("src/main/resources/wmf_full.csv");
-//        System.out.println(wmf.get(1));
+        String filename = "src/main/resources/vibro_ex_4.csv";
+        String[] columns = new String[]{"ЭКСГАУСТЕР 4. ВИБРАЦИЯ НА ОПОРЕ 1"};
+        Map<String, List<Float>> df = CSVParser.parseSpecificColumns(filename, columns);
+        List<Float> df_1interv_1opora = df.get("ЭКСГАУСТЕР 4. ВИБРАЦИЯ НА ОПОРЕ 1").subList(0, 3900);
 
-//        System.out.print("cmo_1(normalize(EurUsd_np_high), normalize(wmf_np[1]), 100) = ");
-//        System.out.println(cmo_1(normalize(highList), normalize(wmf.get(1)), 100));
+        List<Float> maxi_vibr = new ArrayList<>();
+        List<Float> mini_vibr = new ArrayList<>();
+        List<Float> midi_vibr = new ArrayList<>();
+        int step = 30;
+        for (int i = 0; i < df_1interv_1opora.size() - 1; i += step) {
+            List<Float> df2 = df_1interv_1opora.subList(i, i + step);
+            maxi_vibr.add(
+                    (float) df2.stream()
+                            .mapToDouble(value -> (double) value)
+                            .filter(value -> !Double.isNaN(value))
+                            .max()
+                            .orElse(0.0)
+            );
+            mini_vibr.add(
+                    (float) df2.stream()
+                            .mapToDouble(value -> (double) value)
+                            .filter(value -> !Double.isNaN(value))
+                            .min()
+                            .orElse(0.0)
+            );
+            midi_vibr.add(
+                    (float) df2.stream()
+                            .mapToDouble(value -> (double) value)
+                            .filter(value -> !Double.isNaN(value))
+                            .average()
+                            .orElse(0.0)
+            );
+        }
 
-//        System.out.print("case_1 = ");
-//        System.out.println(identification_1(middleList, wmf.get(1), 100, 25));
+        Map<String, List<Float>> wmf_np = CSVParser.parseAllColumns("src/main/resources/wmf_full.csv");
 
-//        System.out.print("case1_1 = ");
-//        System.out.println(best_wmf_1(middleList, wmf, 100, 20));
+        Object[] dataset_identification = predict_1(midi_vibr, maxi_vibr, mini_vibr, wmf_np, 130)
+                .stream()
+                .min(Comparator.comparingDouble(value -> (double) value[1]))
+                .orElse(new Object[]{});//TODO проработать выбрасывание исключения
 
-//        System.out.print("case2_1 = ");
-//        List<List<Float>> x = predict_1(middleList, highList, lowList, wmf, 254);
-//        x.forEach(System.out::println);
-
-        System.out.println("case3 = ");
-        List<List<List<Float>>> y = predict_dataset(middleList, highList, lowList, wmf, 4420, 4560);
-        y.forEach(lists -> lists.forEach(System.out::println));
+        List<Float> result_list = line_predict(0, dataset_identification, wmf_np);
+        result_list.forEach(value -> System.out.println(" " + value + ","));
     }
 
-    private static List<List<Float>> predict(List<Float> price, List<Float> priceHigh, List<Float> priceLow, List<List<Float>> wmf, int point_price) {
-        List<List<Float>> result_list = new ArrayList<>();
+    private static List<Object[]> predict_1(List<Float> price, List<Float> priceHigh, List<Float> priceLow, Map<String, List<Float>> wmf, int point_price) {
+        List<Object[]> result_list = new ArrayList<>();
+
         for (int m = 20; m < 105; m += 5) {
 
             BestWMFCalculator best_wmf_middle_object = new BestWMFCalculator(price, wmf, point_price, m);
@@ -60,33 +77,45 @@ public class App {
                 throw new RuntimeException(e);
             }
 
-            List<Float> best_wmf_middle = best_wmf_middle_object.getBest_wmf();//best_wmf(price, wmf, point_price, m);
-            List<Float> best_wmf_high = best_wmf_high_object.getBest_wmf();//best_wmf(priceHigh, wmf, point_price, m);
-            List<Float> best_wmf_low = best_wmf_low_object.getBest_wmf();//best_wmf(priceLow, wmf, point_price, m);
-            if (best_wmf_low.get(2).equals(best_wmf_middle.get(2)) && best_wmf_middle.get(2).equals(best_wmf_high.get(2)) &&
-                    best_wmf_low.get(5).equals(best_wmf_middle.get(5)) && best_wmf_middle.get(5).equals(best_wmf_high.get(5))) {
+            Object[] best_wmf_middle = best_wmf_middle_object.getBest_wmf();
+            Object[] best_wmf_high = best_wmf_high_object.getBest_wmf();
+            Object[] best_wmf_low = best_wmf_low_object.getBest_wmf();
 
-
-                result_list.add(new ArrayList<>());
-                result_list.get(result_list.size() - 1).add(best_wmf_middle.get(0));
-                result_list.get(result_list.size() - 1).add(best_wmf_middle.get(1));
-                result_list.get(result_list.size() - 1).add(best_wmf_middle.get(2));
-                result_list.get(result_list.size() - 1).add(best_wmf_middle.get(3));
-                result_list.get(result_list.size() - 1).add(best_wmf_middle.get(4));
-                result_list.get(result_list.size() - 1).add(best_wmf_middle.get(5));
-                result_list.get(result_list.size() - 1).add((float) point_price);
+            if (best_wmf_low[2].equals(best_wmf_middle[2]) && best_wmf_middle[2].equals(best_wmf_high[2]) &&
+                    best_wmf_low[5].equals(best_wmf_middle[5]) && best_wmf_middle[5].equals(best_wmf_high[5])) {
+                result_list.add(new Object[]{
+                        best_wmf_middle[0],
+                        best_wmf_middle[1],
+                        best_wmf_middle[2],
+                        best_wmf_middle[3],
+                        best_wmf_middle[4],
+                        best_wmf_middle[5],
+                        point_price});
             }
         }
         return result_list;
     }
 
-    private static List<List<List<Float>>> predict_dataset(List<Float> price, List<Float> priceHigh, List<Float> priceLow, List<List<Float>> wmf, int point_price, int poin_end) {
-        List<List<List<Float>>> result_list = new ArrayList<>();
-        for (int i = point_price; i < poin_end; i += 4) {
-            List<List<Float>> result = predict(price, priceHigh, priceLow, wmf, i);
-            result_list.add(result);
-        }
-        return result_list;
+    private static List<Float> normalize1(List<Float> serie, float max, float min) {
+        return serie.stream().map(x -> (x - min) / (max - min)).toList();
     }
 
+    private static List<Float> denormalize(List<Float> serie, float max, float min) {
+        return serie.stream().map(x -> min + x * (max - min)).toList();
+    }
+
+    private static List<Float> line_predict(int line, Object[] dataset_identificated, Map<String, List<Float>> wmf_full) {
+        int m = (int) dataset_identificated[0];
+        int i = (int) dataset_identificated[2];
+        String  l = (String) dataset_identificated[5];
+        List<Float> wmf_part = wmf_full.get(l).subList(i, i + m);
+        float wmf_max = Collections.max(wmf_part);
+        float wmf_min = Collections.min(wmf_part);
+        List<Float> x = wmf_full.get(l);
+        List<Float> wmf_part_150 = x.subList(i, Math.min(i + 150, x.size()));
+        List<Float> wmf_part_norm = normalize1(wmf_part_150, wmf_max, wmf_min);
+        float min = (float) dataset_identificated[3];
+        float max = (float) dataset_identificated[4];
+        return denormalize(wmf_part_norm, max, min);
+    }
 }
