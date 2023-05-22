@@ -2,54 +2,66 @@ package ru.ddc;
 
 import ru.ddc.utils.CSVParser;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class App {
 
     public static void main(String[] args) {
-        String filename = "src/main/resources/vibro_ex_4.csv";
-        String[] columns = new String[]{"ЭКСГАУСТЕР 4. ВИБРАЦИЯ НА ОПОРЕ 1"};
-        Map<String, List<Float>> df = CSVParser.parseSpecificColumns(filename, columns);
-        List<Float> df_1interv_1opora = df.get("ЭКСГАУСТЕР 4. ВИБРАЦИЯ НА ОПОРЕ 1").subList(0, 3900);
+        String filename = "D:\\Данные для хакатона ЛЦТ\\X_test.csv";
+        char separator = ',';
 
-        List<Float> maxi_vibr = new ArrayList<>();
-        List<Float> mini_vibr = new ArrayList<>();
-        List<Float> midi_vibr = new ArrayList<>();
-        int step = 30;
-        for (int i = 0; i < df_1interv_1opora.size() - 1; i += step) {
-            List<Float> df2 = df_1interv_1opora.subList(i, i + step);
-            maxi_vibr.add(
-                    (float) df2.stream()
-                            .mapToDouble(value -> (double) value)
-                            .filter(value -> !Double.isNaN(value))
-                            .max()
-                            .orElse(0.0)
-            );
-            mini_vibr.add(
-                    (float) df2.stream()
-                            .mapToDouble(value -> (double) value)
-                            .filter(value -> !Double.isNaN(value))
-                            .min()
-                            .orElse(0.0)
-            );
-            midi_vibr.add(
-                    (float) df2.stream()
-                            .mapToDouble(value -> (double) value)
-                            .filter(value -> !Double.isNaN(value))
-                            .average()
-                            .orElse(0.0)
-            );
-        }
+        String[] columns = Arrays.copyOfRange(CSVParser.getHeader(filename, separator), 1, 97);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime end = LocalDateTime.parse("2022-01-01 10:54:53", formatter);
+        LocalDateTime start = end.minusMinutes(500);
+        Map<String, List<Float>> df = CSVParser.parseSpecificColumns(filename, separator, start, end, columns);
+//        for (String key : df.keySet()) {
+        String key = "ЭКСГАУСТЕР 4. ВИБРАЦИЯ НА ОПОРЕ 1";
+//            System.out.println(key);
+            List<Float> df_1interv_1opora = df.get(key);
+//        List<Float> df_1interv_1opora = df.get("ЭКСГАУСТЕР 4. ВИБРАЦИЯ НА ОПОРЕ 1").subList(0, 3900);
 
-        Map<String, List<Float>> wmf_np = CSVParser.parseAllColumns("src/main/resources/wmf_full.csv");
+            List<Float> maxi_vibr = new ArrayList<>();
+            List<Float> mini_vibr = new ArrayList<>();
+            List<Float> midi_vibr = new ArrayList<>();
+            int step = 30;
+            for (int i = 0; i < df_1interv_1opora.size() - 1; i += step) {
+                List<Float> df2 = df_1interv_1opora.subList(i, i + step);
+                maxi_vibr.add(
+                        (float) df2.stream()
+                                .mapToDouble(value -> (double) value)
+                                .filter(value -> !Double.isNaN(value))
+                                .max()
+                                .orElse(0.0)
+                );
+                mini_vibr.add(
+                        (float) df2.stream()
+                                .mapToDouble(value -> (double) value)
+                                .filter(value -> !Double.isNaN(value))
+                                .min()
+                                .orElse(0.0)
+                );
+                midi_vibr.add(
+                        (float) df2.stream()
+                                .mapToDouble(value -> (double) value)
+                                .filter(value -> !Double.isNaN(value))
+                                .average()
+                                .orElse(0.0)
+                );
+            }
 
-        Object[] dataset_identification = predict_1(midi_vibr, maxi_vibr, mini_vibr, wmf_np, 130)
-                .stream()
-                .min(Comparator.comparingDouble(value -> (double) value[1]))
-                .orElse(new Object[]{});//TODO проработать выбрасывание исключения
+            Map<String, List<Float>> wmf_np = CSVParser.parseAllColumns("src/main/resources/wmf_full.csv");
 
-        List<Float> result_list = line_predict(0, dataset_identification, wmf_np);
-        result_list.forEach(value -> System.out.println(" " + value + ","));
+            Object[] dataset_identification = predict_1(midi_vibr, maxi_vibr, mini_vibr, wmf_np, 130)
+                    .stream()
+                    .min(Comparator.comparingDouble(value -> (double) value[1]))
+                    .orElse(new Object[]{});//TODO проработать выбрасывание исключения
+
+            List<Float> result_list = line_predict(0, dataset_identification, wmf_np);
+            result_list.forEach(value -> System.out.println(" " + value + ","));
+//        }
     }
 
     private static List<Object[]> predict_1(List<Float> price, List<Float> priceHigh, List<Float> priceLow, Map<String, List<Float>> wmf, int point_price) {
